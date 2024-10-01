@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 
 // Connect to MongoDB with autoIndex enabled
-mongoose.connect('mongodb://localhost:27017/vehicle-rental', {
+mongoose.connect('mongodb://localhost:27017/vehicle-rental-v2', {
     autoIndex: true // Ensures that indexes are created automatically
 }).then(() => {
     console.log('MongoDB connected');
@@ -29,24 +29,33 @@ app.post('/suggest-vehicles', async (req, res) => {
 
     try {
         // Using aggregate with $geoNear
-        const vehicles = await Vehicle.aggregate([
-            {
-                $geoNear: {
-                    near: {
-                        type: 'Point',
-                        coordinates: userSource
-                    },
-                    distanceField: 'dist.calculated',
-                    maxDistance: maxDistance,
-                    query: { available: true, type: vehicleType || { $exists: true } },
-                    includeLocs: 'pickupLocations',
-                    spherical: true
-                }
-            }
-            // Additional pipeline stages if needed
-        ]);
+        // const vehicles = await Vehicle.aggregate([
+        //     {
+        //         $geoNear: {
+        //             near: {
+        //                 type: 'Point',
+        //                 coordinates: userSource
+        //             },
+        //             distanceField: 'dist.calculated',
+        //             maxDistance: maxDistance,
+        //             query: { available: true, type: vehicleType || { $exists: true } },
+        //             includeLocs: 'pickupLocations',
+        //             spherical: true
+        //         }
+        //     }
+        //     // Additional pipeline stages if needed
+        // ]);
 
-        res.json({ vehicles });
+        const vehicles = await Vehicle.find({
+            "pickupLocations.coordinates": {
+                $near: {
+                    $geometry: { type: "Point", coordinates: userSource },
+                    $maxDistance: maxDistance
+                }
+            },
+        });
+
+        res.json({ count: vehicles.length, vehicles });
     } catch (err) {
         console.error('Error suggesting vehicles:', err);
         res.status(500).json({ message: 'Internal server error.' });

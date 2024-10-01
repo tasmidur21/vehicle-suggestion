@@ -2,6 +2,22 @@
 
 const mongoose = require('mongoose');
 
+const locationSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+    },
+    coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+    }
+}, { _id: false }); // Disable automatic _id generation for subdocuments
+
 const vehicleSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -16,49 +32,28 @@ const vehicleSchema = new mongoose.Schema({
         required: true
     },
     currentLocation: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number], // [longitude, latitude]
-            required: true
-        }
+        type: locationSchema,
+        required: true
     },
     available: {
         type: Boolean,
         default: true
     },
-    pickupLocations: [{
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number],
-            required: true
-        }
-    }],
-    dropoffLocations: [{
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number],
-            required: true
-        }
-    }]
+    pickupLocations: {
+        type: [locationSchema],
+        required: true
+    },
+    dropoffLocations: {
+        type: [locationSchema],
+        required: true
+    }
 }, { timestamps: true });
 
 // Geospatial indexes
-vehicleSchema.index({ currentLocation: '2dsphere' });
-vehicleSchema.index({ pickupLocations: '2dsphere' });
-vehicleSchema.index({ dropoffLocations: '2dsphere' });
+vehicleSchema.index({ "currentLocation.coordinates": '2dsphere' });
+vehicleSchema.index({ "pickupLocations.coordinates": '2dsphere' });
+vehicleSchema.index({ "dropoffLocations.coordinates": '2dsphere' });
 
-const Vehicle = mongoose.model('Vehicle', vehicleSchema);
+const Vehicle = mongoose.model('Vehicle', vehicleSchema); // Ensure correct collection name
 
 module.exports = Vehicle;

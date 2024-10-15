@@ -1,6 +1,8 @@
 // models/Vehicle.js
 
 const mongoose = require('mongoose');
+const createdByPlugin = require("../plugins/createdByPlugin");
+const softDeletePlugin = require("../plugins/softDeletePlugin");
 
 const locationSchema = new mongoose.Schema({
     name: {
@@ -46,9 +48,13 @@ const vehicleSchema = new mongoose.Schema({
     dropoffLocations: {
         type: [locationSchema],
         required: true
-    }
+    },
+    createdBy: { type: String, required: false },
+    updatedBy: { type: String, required: false },
 }, { timestamps: true });
 
+vehicleSchema.plugin(createdByPlugin);
+vehicleSchema.plugin(softDeletePlugin);
 // Geospatial indexes
 vehicleSchema.index({ "currentLocation.coordinates": '2dsphere' });
 vehicleSchema.index({ "pickupLocations.coordinates": '2dsphere' });

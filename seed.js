@@ -745,7 +745,7 @@ const vehicles = [
 ];
 
 // MongoDB connection URI
-const MONGODB_URI = 'mongodb://localhost:27017/vehicle-rental-v2'; // Replace with your MongoDB URI
+const MONGODB_URI = 'mongodb://localhost:27017/vehicle-rental-v22'; // Replace with your MongoDB URI
 
 // Function to seed the database
 const seedDatabase = async () => {
@@ -759,7 +759,7 @@ const seedDatabase = async () => {
         // Clear existing vehicles
         await Vehicle.deleteMany({});
         console.log('Existing vehicles cleared.');
-
+        await Vehicle(vehicles[0]);
         // Insert sample vehicles
         await Vehicle.insertMany(vehicles);
         console.log('Sample vehicles inserted successfully.');

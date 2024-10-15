@@ -1,19 +1,97 @@
 // server.js
 
 const express = require('express');
+const httpContext = require('express-http-context');
+
 const mongoose = require('mongoose');
 const Vehicle = require('./models/Vehicle');
-const app = express();
 
+const app = express();
+app.use(httpContext.middleware);
 app.use(express.json());
 
 // Connect to MongoDB with autoIndex enabled
-mongoose.connect('mongodb://localhost:27017/vehicle-rental-v2', {
+mongoose.connect('mongodb://localhost:27017/vehicle-rental-v2-test', {
     autoIndex: true // Ensures that indexes are created automatically
 }).then(() => {
     console.log('MongoDB connected');
 }).catch(err => {
     console.error('MongoDB connection error:', err);
+});
+
+// Middleware to simulate user authentication
+app.use((req, res, next) => {
+    // Simulate a logged-in user
+    req.user = { id: '670e3ed28d22a07c41153e9d' }; // Replace with actual user ID
+    httpContext.set('req', req); // Set the request in httpContext
+    next();
+});
+
+// Route to create a new vehicle
+app.post('/vehicles', async (req, res) => {
+    try {
+        const vehicleData = {
+            name: req.body.name,
+            type: req.body.type,
+            ratePerDay: req.body.ratePerDay,
+            currentLocation: req.body.currentLocation,
+            pickupLocations: req.body.pickupLocations,
+            dropoffLocations: req.body.dropoffLocations
+        };
+
+        const newVehicle = new Vehicle(vehicleData);
+        await newVehicle.save();
+
+        res.status(201).json(newVehicle);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+app.patch('/vehicles/:id', async (req, res) => {
+    try {
+        const vehicleId = req.params.id;
+        const updateData = {
+            // Update fields here, e.g., name, type, ratePerDay, etc.
+            name: req.body.name,
+            type: req.body.type,
+            ratePerDay: req.body.ratePerDay,
+        };
+
+        const updatedVehicle = await Vehicle.findByIdAndUpdate(vehicleId, updateData, { new: true });
+        res.status(200).json(updatedVehicle);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+app.delete('/vehicles/:id', async (req, res) => {
+    try {
+        const vehicleId = req.params.id;
+        const updatedVehicle = await Vehicle.softDeleteById(vehicleId);
+        res.status(200).json(updatedVehicle);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+app.get('/vehicles/:id', async (req, res) => {
+    try {
+        const vehicleId = req.params.id;
+        const updatedVehicle = await Vehicle.findById(vehicleId);
+        res.status(200).json(updatedVehicle);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+app.get('/vehicles', async (req, res) => {
+    try {
+        const updatedVehicle = await Vehicle.findDeleted();
+        res.status(200).json(updatedVehicle);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 // Example $geoNear Query
